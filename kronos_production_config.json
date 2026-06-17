@@ -1,0 +1,93 @@
+{
+  "config_version": "kronos_production_v1",
+  "frozen_at": "2026-06-17",
+  "note": "Kronos 日线预测生产模型冻结。每品种独立选择最优模型（原始 vs 微调），用于每日跟踪。",
+  "freeze_basis": {
+    "backtest_date": "2026-06-17",
+    "backtest_script": "scripts/finetune_pipeline.py backtest",
+    "early_stop": "patience=5, delta=0.001 (T 7ep早停)"
+  },
+  "varieties": {
+    "TS": {
+      "name": "TS.CFE",
+      "full_name": "2年期国债期货",
+      "selected_model": "original",
+      "rationale": "Original Sharpe 44.55 > FT 25.92. Original wins decisively.",
+      "model_paths": {
+        "tokenizer": "models/Kronos-Tokenizer-base",
+        "basemodel": "models/Kronos-base"
+      },
+      "backtest_metrics": {
+        "original_sharpe": 44.55,
+        "original_return_pct": 0.20,
+        "original_win_rate": 80.0,
+        "ft_sharpe": 25.92,
+        "ft_return_pct": 0.13,
+        "ft_win_rate": 20.0
+      }
+    },
+    "TF": {
+      "name": "TF.CFE",
+      "full_name": "5年期国债期货",
+      "selected_model": "original",
+      "rationale": "Original Sharpe 54.51 > FT 4.78. FT has higher win rate (78.6% vs 64.3%) but much lower return.",
+      "model_paths": {
+        "tokenizer": "models/Kronos-Tokenizer-base",
+        "basemodel": "models/Kronos-base"
+      },
+      "backtest_metrics": {
+        "original_sharpe": 54.51,
+        "original_return_pct": 1.39,
+        "original_win_rate": 64.3,
+        "ft_sharpe": 4.78,
+        "ft_return_pct": 0.14,
+        "ft_win_rate": 78.6
+      }
+    },
+    "T": {
+      "name": "T.CFE",
+      "full_name": "10年期国债期货",
+      "selected_model": "fine-tuned",
+      "rationale": "FT Sharpe 40.12 > Original 23.63. FT return 1.97% > Original 1.24%. Early stop at 7ep optimal.",
+      "model_paths": {
+        "tokenizer": "finetuned_models/futures_T/tokenizer/best_model",
+        "basemodel": "finetuned_models/futures_T/basemodel/best_model"
+      },
+      "backtest_metrics": {
+        "original_sharpe": 23.63,
+        "original_return_pct": 1.24,
+        "original_win_rate": 64.3,
+        "ft_sharpe": 40.12,
+        "ft_return_pct": 1.97,
+        "ft_win_rate": 71.4
+      }
+    },
+    "TL": {
+      "name": "TL.CFE",
+      "full_name": "30年期国债期货",
+      "selected_model": "original",
+      "rationale": "Only 1 trade. Original more stable. Orig return 0.92% = FT.",
+      "model_paths": {
+        "tokenizer": "models/Kronos-Tokenizer-base",
+        "basemodel": "models/Kronos-base"
+      },
+      "backtest_metrics": {
+        "original_sharpe": null,
+        "original_return_pct": 0.92,
+        "original_win_rate": 100.0,
+        "ft_sharpe": null,
+        "ft_return_pct": 0.92,
+        "ft_win_rate": 100.0,
+        "note": "仅1次交易，统计意义有限"
+      }
+    }
+  },
+  "inference_params": {
+    "lookback": 500,
+    "pred_len": 5,
+    "kline_type": 6,
+    "sample_count": 5,
+    "temperature": 1.0,
+    "top_p": 0.9
+  }
+}

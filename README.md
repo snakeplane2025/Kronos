@@ -1,337 +1,638 @@
-<div align="center">
-  <h2><b>Kronos: A Foundation Model for the Language of Financial Markets </b></h2>
-</div>
+# Kronos + DM Quant API — 本地部署与实战指南
 
+> **版本**: v1.0 | **更新**: 2026-06-16
+> **项目**: [shiyu-coder/Kronos](https://github.com/shiyu-coder/Kronos) (AAAI 2026)
+> **模型**: Kronos-base (102.3M) | **数据**: DM Quant API
 
-<div align="center">
+---
 
-</a> 
-<a href="https://huggingface.co/NeoQuasar"> 
-<img src="https://img.shields.io/badge/🤗-Hugging_Face-yellow" alt="Hugging Face"> 
-</a> 
-<a href="https://shiyu-coder.github.io/Kronos-demo/"> <img src="https://img.shields.io/badge/🚀-Live_Demo-brightgreen" alt="Live Demo"> </a>
-<a href="https://github.com/shiyu-coder/Kronos/graphs/commit-activity"> 
-<img src="https://img.shields.io/github/last-commit/shiyu-coder/Kronos?color=blue" alt="Last Commit"> 
-</a> 
-<a href="https://github.com/shiyu-coder/Kronos/stargazers"> 
-<img src="https://img.shields.io/github/stars/shiyu-coder/Kronos?color=lightblue" alt="GitHub Stars"> 
-</a> 
-<a href="https://github.com/shiyu-coder/Kronos/network/members"> 
-<img src="https://img.shields.io/github/forks/shiyu-coder/Kronos?color=yellow" alt="GitHub Forks"> 
-</a> 
-<a href="./LICENSE"> 
-<img src="https://img.shields.io/github/license/shiyu-coder/Kronos?color=green" alt="License"> 
-</a>
+## 目录
 
-</div>
+1. [项目概览](#1-项目概览)
+2. [环境与安装](#2-环境与安装)
+3. [模型下载与加载](#3-模型下载与加载)
+4. [DM API 数据取数](#4-dm-api-数据取数)
+5. [Kronos × DM 桥梁架构](#5-kronos--dm-桥梁架构)
+6. [API 参考](#6-api-参考)
+7. [实战案例](#7-实战案例)
+8. [坑点与注意事项](#8-坑点与注意事项)
+9. [错误排查](#9-错误排查)
 
-<div align="center">
-  <!-- Keep these links. Translations will automatically update with the README. -->
-  <a href="https://zdoc.app/de/shiyu-coder/Kronos">Deutsch</a> | 
-  <a href="https://zdoc.app/es/shiyu-coder/Kronos">Español</a> | 
-  <a href="https://zdoc.app/fr/shiyu-coder/Kronos">Français</a> | 
-  <a href="https://zdoc.app/ja/shiyu-coder/Kronos">日本語</a> | 
-  <a href="https://zdoc.app/ko/shiyu-coder/Kronos">한국어</a> | 
-  <a href="https://zdoc.app/pt/shiyu-coder/Kronos">Português</a> | 
-  <a href="https://zdoc.app/ru/shiyu-coder/Kronos">Русский</a> | 
-  <a href="https://zdoc.app/zh/shiyu-coder/Kronos">中文</a>
-</div>
+---
 
-<p align="center">
+## 1. 项目概览
 
-<img src="./figures/logo.png" width="100">
+### 1.1 Kronos 是什么
 
-</p>
+Kronos 是**首个开源金融K线基础模型**（AAAI 2026），采用 **decoder-only Transformer** 架构，在 **45+全球交易所** 的 K 线数据上预训练。核心创新是**两阶段框架**：
 
-> Kronos is the **first open-source foundation model** for financial candlesticks (K-lines), 
-> trained on data from over **45 global exchanges**.
-
-
-</div>
-
-## 📰 News
-*   🚩 **[2025.11.10]** Kronos has been accpeted by AAAI 2026.
-*   🚩 **[2025.08.17]** We have released the scripts for fine-tuning! Check them out to adapt Kronos to your own tasks.
-*   🚩 **[2025.08.02]** Our paper is now available on [arXiv](https://arxiv.org/abs/2508.02739)!
-
-<p align="center">
-
-## 📜 Introduction
-
-**Kronos** is a family of decoder-only foundation models, pre-trained specifically for the "language" of financial markets—K-line sequences. Unlike general-purpose TSFMs, Kronos is designed to handle the unique, high-noise characteristics of financial data. It leverages a novel two-stage framework: 
-1. A specialized tokenizer first quantizes continuous, multi-dimensional K-line data (OHLCV) into **hierarchical discrete tokens**. 
-2. A large, autoregressive Transformer is then pre-trained on these tokens, enabling it to serve as a unified model for diverse quantitative tasks.
-
-<p align="center">
-    <img src="figures/overview.png" alt="" align="center" width="700px" />
-</p>
-
-## ✨ Live Demo 
-We have set up a live demo to visualize Kronos's forecasting results. The webpage showcases a forecast for the **BTC/USDT** trading pair over the next 24 hours. 
-
-**👉 [Access the Live Demo Here](https://shiyu-coder.github.io/Kronos-demo/)** 
-
-## 📦 Model Zoo 
-We release a family of pre-trained models with varying capacities to suit different computational and application needs. All models are readily accessible from the Hugging Face Hub.
-
-| Model        | Tokenizer                                                                       | Context length | Params  | Open-source                                                               |
-|--------------|---------------------------------------------------------------------------------| -------------- | ------ |---------------------------------------------------------------------------|
-| Kronos-mini  | [Kronos-Tokenizer-2k](https://huggingface.co/NeoQuasar/Kronos-Tokenizer-2k)     | 2048           | 4.1M   | ✅ [NeoQuasar/Kronos-mini](https://huggingface.co/NeoQuasar/Kronos-mini)  |
-| Kronos-small | [Kronos-Tokenizer-base](https://huggingface.co/NeoQuasar/Kronos-Tokenizer-base) | 512            | 24.7M  | ✅ [NeoQuasar/Kronos-small](https://huggingface.co/NeoQuasar/Kronos-small) |
-| Kronos-base  | [Kronos-Tokenizer-base](https://huggingface.co/NeoQuasar/Kronos-Tokenizer-base) | 512            | 102.3M | ✅ [NeoQuasar/Kronos-base](https://huggingface.co/NeoQuasar/Kronos-base)   |
-| Kronos-large | [Kronos-Tokenizer-base](https://huggingface.co/NeoQuasar/Kronos-Tokenizer-base) | 512            | 499.2M | ❌                                                                         |
-
-
-## 🚀 Getting Started
-
-### Installation
-
-1. Install Python 3.10+, and then install the dependencies:
-
-```shell
-pip install -r requirements.txt
+```
+原始OHLCV数据
+    │
+    ▼
+┌─────────────────┐
+│  量化 Tokenizer  │  ← 将高维OHLCV量化为层次离散token (s1/s2)
+│  BSQuantizer     │     s1 = 粗粒度codebook
+│                  │     s2 = 细粒度codebook  
+└────────┬────────┘
+         │
+         ▼ token序列
+┌─────────────────┐
+│  Autoregressive  │  ← Transformer在token序列上预训练
+│  Transformer     │     预测下一个token = 预测未来价格走势
+└────────┬────────┘
+         │
+         ▼
+    OHLCV预测输出
 ```
 
-### 📈 Making Forecasts
+### 1.2 模型系列
 
-Forecasting with Kronos is straightforward using the `KronosPredictor` class. It handles data preprocessing, normalization, prediction, and inverse normalization, allowing you to get from raw data to forecasts in just a few lines of code.
+| 模型 | 参数量 | 上下文长度 | 适用场景 |
+|------|--------|-----------|---------|
+| Kronos-mini | **4.1M** | 2048 | 快速验证、低资源设备 |
+| Kronos-small | **24.7M** | 512 | 轻量级预测 |
+| **Kronos-base** ⭐ | **102.3M** | 512 | **推荐，精度与速度平衡** |
+| Kronos-large | 499.2M | 512 | ❌ 未开源 |
 
-**Important Note**: The `max_context` for `Kronos-small` and `Kronos-base` is **512**. This is the maximum sequence length the model can process. For optimal performance, it is recommended that your input data length (i.e., `lookback`) does not exceed this limit. The `KronosPredictor` will automatically handle truncation for longer contexts.
+### 1.3 系统架构
 
-Here is a step-by-step guide to making your first forecast.
-
-#### 1. Load the Tokenizer and Model
-
-First, load a pre-trained Kronos model and its corresponding tokenizer from the Hugging Face Hub.
-
-```python
-from model import Kronos, KronosTokenizer, KronosPredictor
-
-# Load from Hugging Face Hub
-tokenizer = KronosTokenizer.from_pretrained("NeoQuasar/Kronos-Tokenizer-base")
-model = Kronos.from_pretrained("NeoQuasar/Kronos-small")
+```
+┌────────────────────────────────────────────────────────┐
+│                    用户入口                               │
+│  CLI: kronos_dm_predict.py  │  Python API: KronosDM    │
+└────────────────────┬───────────────────────────────────┘
+                     │
+┌────────────────────▼───────────────────────────────────┐
+│              kronos_dm_bridge.py (桥梁层)                │
+│                                                        │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐    │
+│  │ 期货K线取数  │  │ 指数K线取数  │  │ 债券K线取数  │    │
+│  │ futures_bars│  │ equity_bars │  │ bond_bars   │    │
+│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘    │
+│         │               │               │            │
+│         └───────────────┼───────────────┘            │
+│                         ▼                            │
+│              ┌──────────────────┐                    │
+│              │  KronosPredictor  │  ← 归一化+推理+反归一化│
+│              └────────┬─────────┘                    │
+└───────────────────────┼──────────────────────────────┘
+                        │
+          ┌─────────────┴─────────────┐
+          ▼                           ▼
+┌──────────────────┐     ┌──────────────────────┐
+│  Kronos-base     │     │  DM Quant API        │
+│  102.3M params   │     │  东吴数聚             │
+│  (HuggingFace)   │     │  15+接口             │
+└──────────────────┘     └──────────────────────┘
 ```
 
-#### 2. Instantiate the Predictor
+---
 
-Create an instance of `KronosPredictor`, passing the model, tokenizer, and desired device.
+## 2. 环境与安装
 
-```python
-# Initialize the predictor
-predictor = KronosPredictor(model, tokenizer, max_context=512)
+### 2.1 目录结构
+
+```
+~/quant/Kronos/
+├── venv/                          # 独立 Python 虚拟环境
+├── models/
+│   ├── Kronos-base/               # 模型权重 (102.3M params)
+│   │   ├── model.safetensors      # ~410MB
+│   │   ├── config.json
+│   │   └── ...
+│   └── Kronos-Tokenizer-base/     # 量化 Tokenizer
+│       ├── model.safetensors
+│       ├── config.json
+│       └── ...
+├── model/
+│   ├── __init__.py                # 包入口
+│   ├── kronos.py                  # Kronos/KronosTokenizer/KronosPredictor
+│   └── module.py                  # 网络层定义
+├── kronos_dm_bridge.py            # ⭐ DM API 桥梁（核心集成代码）
+├── examples/
+│   ├── kronos_dm_predict.py       # ⭐ CLI 预测工具
+│   ├── prediction_example.py      # 官方示例（需数据文件）
+│   └── prediction_wo_vol_example.py
+├── requirements.txt
+└── README.md                      # 本文件
 ```
 
-#### 3. Prepare Input Data
+### 2.2 安装步骤
 
-The `predict` method requires three main inputs:
--   `df`: A pandas DataFrame containing the historical K-line data. It must include columns `['open', 'high', 'low', 'close']`. `volume` and `amount` are optional.
--   `x_timestamp`: A pandas Series of timestamps corresponding to the historical data in `df`.
--   `y_timestamp`: A pandas Series of timestamps for the future periods you want to predict.
+```bash
+# 1. 克隆仓库（已完成）
+cd ~/quant
+git clone https://github.com/shiyu-coder/Kronos.git
 
-```python
-import pandas as pd
+# 2. 创建虚拟环境（已完成）
+cd Kronos
+python3 -m venv venv
 
-# Load your data
-df = pd.read_csv("./data/XSHG_5min_600977.csv")
-df['timestamps'] = pd.to_datetime(df['timestamps'])
+# 3. 安装依赖
+source venv/bin/activate
+uv pip install torch --index-url https://download.pytorch.org/whl/cpu
+uv pip install -r requirements.txt
+uv pip install huggingface_hub==0.33.1 pandas==2.2.2 einops==0.8.1
 
-# Define context window and prediction length
-lookback = 400
-pred_len = 120
-
-# Prepare inputs for the predictor
-x_df = df.loc[:lookback-1, ['open', 'high', 'low', 'close', 'volume', 'amount']]
-x_timestamp = df.loc[:lookback-1, 'timestamps']
-y_timestamp = df.loc[lookback:lookback+pred_len-1, 'timestamps']
+# 4. 安装 DM API 客户端
+uv pip install "/home/llzjj/quant/backtraderUS/dm api/dm_quant_api_client-0.2.2-py3-none-any.whl"
 ```
 
-#### 4. Generate Forecasts 
+### 2.3 网络限制（国内环境）
 
-Call the `predict` method to generate forecasts. You can control the sampling process with parameters like `T`, `top_p`, and `sample_count` for probabilistic forecasting.
+由于国内无法直接访问 `huggingface.co`，下载模型需使用镜像：
+
+```bash
+# 方式一：环境变量
+export HF_ENDPOINT=https://hf-mirror.com
+
+# 方式二：每命令前缀
+HF_ENDPOINT=https://hf-mirror.com python3 your_script.py
+
+# 验证
+curl -I https://hf-mirror.com  # 应返回 200
+```
+
+---
+
+## 3. 模型下载与加载
+
+### 3.1 下载命令
 
 ```python
-# Generate predictions
-pred_df = predictor.predict(
-    df=x_df,
-    x_timestamp=x_timestamp,
-    y_timestamp=y_timestamp,
-    pred_len=pred_len,
-    T=1.0,          # Temperature for sampling
-    top_p=0.9,      # Nucleus sampling probability
-    sample_count=1  # Number of forecast paths to generate and average
+from huggingface_hub import snapshot_download
+import os
+
+# 下载模型（约 410MB）
+snapshot_download(
+    repo_id="NeoQuasar/Kronos-base",
+    local_dir="models/Kronos-base"
 )
 
-print("Forecasted Data Head:")
-print(pred_df.head())
+# 下载 Tokenizer（约 85MB）
+snapshot_download(
+    repo_id="NeoQuasar/Kronos-Tokenizer-base",
+    local_dir="models/Kronos-Tokenizer-base"
+)
 ```
 
-The `predict` method returns a pandas DataFrame containing the forecasted values for `open`, `high`, `low`, `close`, `volume`, and `amount`, indexed by the `y_timestamp` you provided.
-
-For efficient processing of multiple time series, Kronos provides a `predict_batch` method that enables parallel prediction on multiple datasets simultaneously. This is particularly useful when you need to forecast multiple assets or time periods at once.
+### 3.2 加载模型
 
 ```python
-# Prepare multiple datasets for batch prediction
-df_list = [df1, df2, df3]  # List of DataFrames
-x_timestamp_list = [x_ts1, x_ts2, x_ts3]  # List of historical timestamps
-y_timestamp_list = [y_ts1, y_ts2, y_ts3]  # List of future timestamps
+import sys
+sys.path.insert(0, '.')  # 确保能找到 model 包
 
-# Generate batch predictions
-pred_df_list = predictor.predict_batch(
-    df_list=df_list,
-    x_timestamp_list=x_timestamp_list,
-    y_timestamp_list=y_timestamp_list,
-    pred_len=pred_len,
-    T=1.0,
-    top_p=0.9,
-    sample_count=1,
-    verbose=True
+from model import KronosTokenizer, Kronos, KronosPredictor
+
+# 加载 Tokenizer
+tokenizer = KronosTokenizer.from_pretrained("models/Kronos-Tokenizer-base")
+
+# 加载模型
+model = Kronos.from_pretrained("models/Kronos-base")
+model.eval()
+
+# 创建 Predictor（自动检测 CPU/CUDA）
+predictor = KronosPredictor(
+    model, tokenizer,
+    device="cpu",          # 或 "cuda:0"
+    max_context=512        # base/small 模型上限
 )
 
-# pred_df_list contains prediction results in the same order as input
-for i, pred_df in enumerate(pred_df_list):
-    print(f"Predictions for series {i}:")
-    print(pred_df.head())
+print(f"模型参数量: {sum(p.numel() for p in model.parameters()):,}")
 ```
 
-**Important Requirements for Batch Prediction:**
-- All series must have the same historical length (lookback window)
-- All series must have the same prediction length (`pred_len`)
-- Each DataFrame must contain the required columns: `['open', 'high', 'low', 'close']`
-- `volume` and `amount` columns are optional and will be filled with zeros if missing
+### 3.3 模型参数量验证
 
-The `predict_batch` method leverages GPU parallelism for efficient processing and automatically handles normalization and denormalization for each series independently.
+| 模型 | 加载后确认输出 |
+|------|---------------|
+| Kronos-small | `24,717,248 params` |
+| Kronos-base | `102,310,592 params` |
 
-#### 5. Example and Visualization
+---
 
-For a complete, runnable script that includes data loading, prediction, and plotting, please see [`examples/prediction_example.py`](examples/prediction_example.py).
+## 4. DM API 数据取数
 
-Running this script will generate a plot comparing the ground truth data against the model's forecast, similar to the one shown below:
+### 4.1 凭证配置
 
-<p align="center">
-    <img src="figures/prediction_example.png" alt="Forecast Example" align="center" width="600px" />
-</p>
+DM Quant API 凭证存储在 `~/quant/backtraderUS/.env`：
 
-Additionally, we provide a script that makes predictions without Volume and Amount data, which can be found in [`examples/prediction_wo_vol_example.py`](examples/prediction_wo_vol_example.py).
-
-
-## 🔧 Finetuning on Your Own Data (A-Share Market Example)
-
-We provide a complete pipeline for finetuning Kronos on your own datasets. As an example, we demonstrate how to use [Qlib](https://github.com/microsoft/qlib) to prepare data from the Chinese A-share market and conduct a simple backtest.
-
-> **Disclaimer:** This pipeline is intended as a demonstration to illustrate the finetuning process. It is a simplified example and not a production-ready quantitative trading system. A robust quantitative strategy requires more sophisticated techniques, such as portfolio optimization and risk factor neutralization, to achieve stable alpha.
-
-The finetuning process is divided into four main steps:
-
-1.  **Configuration**: Set up paths and hyperparameters.
-2.  **Data Preparation**: Process and split your data using Qlib.
-3.  **Model Finetuning**: Finetune the Tokenizer and the Predictor models.
-4.  **Backtesting**: Evaluate the finetuned model's performance.
-
-### Prerequisites
-
-1.  First, ensure you have all dependencies from `requirements.txt` installed.
-2.  This pipeline relies on `qlib`. Please install it:
-    ```shell
-      pip install pyqlib
-    ```
-3.  You will need to prepare your Qlib data. Follow the [official Qlib guide](https://github.com/microsoft/qlib) to download and set up your data locally. The example scripts assume you are using daily frequency data.
-
-### Step 1: Configure Your Experiment
-
-All settings for data, training, and model paths are centralized in `finetune/config.py`. Before running any scripts, please **modify the following paths** according to your environment:
-
-*   `qlib_data_path`: Path to your local Qlib data directory.
-*   `dataset_path`: Directory where the processed train/validation/test pickle files will be saved.
-*   `save_path`: Base directory for saving model checkpoints.
-*   `backtest_result_path`: Directory for saving backtesting results.
-*   `pretrained_tokenizer_path` and `pretrained_predictor_path`: Paths to the pre-trained models you want to start from (can be local paths or Hugging Face model names).
-
-You can also adjust other parameters like `instrument`, `train_time_range`, `epochs`, and `batch_size` to fit your specific task. If you don't use [Comet.ml](https://www.comet.com/), set `use_comet = False`.
-
-### Step 2: Prepare the Dataset
-
-Run the data preprocessing script. This script will load raw market data from your Qlib directory, process it, split it into training, validation, and test sets, and save them as pickle files.
-
-```shell
-python finetune/qlib_data_preprocess.py
+```bash
+# .env 格式（必须是 Unix LF！）
+INNO_APP_KEY=your_app_key_here
+INNO_SM4_KEY=your_sm4_key_here
 ```
 
-After running, you will find `train_data.pkl`, `val_data.pkl`, and `test_data.pkl` in the directory specified by `dataset_path` in your config.
-
-### Step 3: Run the Finetuning
-
-The finetuning process consists of two stages: finetuning the tokenizer and then the predictor. Both training scripts are designed for multi-GPU training using `torchrun`.
-
-#### 3.1 Finetune the Tokenizer
-
-This step adjusts the tokenizer to the data distribution of your specific domain.
-
-```shell
-# Replace NUM_GPUS with the number of GPUs you want to use (e.g., 2)
-torchrun --standalone --nproc_per_node=NUM_GPUS finetune/train_tokenizer.py
+**⚠️ CRLF 陷阱**：Windows 编辑过的 `.env` 会携带 `\r` 导致请求失败，用以下命令修复：
+```bash
+sed -i 's/\r$//' ~/quant/backtraderUS/.env
 ```
 
-The best tokenizer checkpoint will be saved to the path configured in `config.py` (derived from `save_path` and `tokenizer_save_folder_name`).
+### 4.2 可用 K 线接口
 
-#### 3.2 Finetune the Predictor
+| 接口 | API 路径 | 支持类型 | 代码格式 |
+|------|---------|---------|---------|
+| **期货K线** | `/futures/market-data/bars` | T/TF/TL | `"T2606"`（**无**后缀） |
+| **权益K线** | `/equity/market-data/bars` | 股票/基金/指数 | `"000300.SH"`（带后缀） |
+| **债券K线** | `/bond/market-data/bars` | 国债/信用债 | `"2400001.IB"`（带后缀） |
 
-This step finetunes the main Kronos model for the forecasting task.
+### 4.3 K 线类型 (kline_type)
 
-```shell
-# Replace NUM_GPUS with the number of GPUs you want to use (e.g., 2)
-torchrun --standalone --nproc_per_node=NUM_GPUS finetune/train_predictor.py
+| 值 | 类型 | 每天约产生 | 跨度限制 |
+|----|------|-----------|---------|
+| 1 | 1分钟 | 240条 | ≤ 1天 |
+| 2 | 5分钟 | 48条 | ≤ 5天 |
+| 3 | 15分钟 | 16条 | ≤ 15天 |
+| 4 | 30分钟 | 8条 | ≤ 1月 |
+| 5 | 60分钟 | 4条 | ≤ 2月 |
+| **6** ⭐ | **日线** | 1条 | ≤ **1年** |
+| 7 | 周线 | 0.2条 | ≤ 5年 |
+| 8 | 月线 | 0.05条 | ≤ 10年 |
+
+### 4.4 自动主力合约推断
+
+```python
+from kronos_dm_bridge import _get_nearby_futures_code
+
+# 当前时间 → 自动推断最近的主力合约
+code = _get_nearby_futures_code('T')     # → 'T2609' (2026-09月合约)
+code = _get_nearby_futures_code('TF')    # → 'TF2609'
+code = _get_nearby_futures_code('TL')    # → 'TL2609'
 ```
 
-The best predictor checkpoint will be saved to the path configured in `config.py`.
+逻辑：中金所国债期货的交割月为 **3月、6月、9月、12月**。函数取"当前月+2个月后的下一个交割月"。
 
-### Step 4: Evaluate with Backtesting
+### 4.5 活跃券查询
 
-Finally, run the backtesting script to evaluate your finetuned model. This script loads the models, performs inference on the test set, generates prediction signals (e.g., forecasted price change), and runs a simple top-K strategy backtest.
+```python
+from kronos_dm_bridge import get_active_bond_codes
 
-```shell
-# Specify the GPU for inference
-python finetune/qlib_test.py --device cuda:0
+# 获取10Y国债活跃券
+active_10y = get_active_bond_codes(
+    bond_filter_type=1,  # 1=国债, 3=国开
+    key_tenor="10Y",
+    sequence_type=1      # 1=活跃, 2=次活跃
+)
+# → ['2400001.IB', ...]
 ```
 
-The script will output a detailed performance analysis in your console and generate a plot showing the cumulative return curves of your strategy against the benchmark, similar to the one below:
+---
 
-<p align="center">
-    <img src="figures/backtest_result_example.png" alt="Backtest Example" align="center" width="700px" />
-</p>
+## 5. Kronos × DM 桥梁架构
 
-### 💡 From Demo to Production: Important Considerations
-
-*   **Raw Signals vs. Pure Alpha**: The signals generated by the model in this demo are raw predictions. In a real-world quantitative workflow, these signals would typically be fed into a portfolio optimization model. This model would apply constraints to neutralize exposure to common risk factors (e.g., market beta, style factors like size and value), thereby isolating the **"pure alpha"** and improving the strategy's robustness.
-*   **Data Handling**: The provided `QlibDataset` is an example. For different data sources or formats, you will need to adapt the data loading and preprocessing logic.
-*   **Strategy and Backtesting Complexity**: The simple top-K strategy used here is a basic starting point. Production-level strategies often incorporate more complex logic for portfolio construction, dynamic position sizing, and risk management (e.g., stop-loss/take-profit rules). Furthermore, a high-fidelity backtest should meticulously model transaction costs, slippage, and market impact to provide a more accurate estimate of real-world performance.
-
-> **📝 AI-Generated Comments**: Please note that many of the code comments within the `finetune/` directory were generated by an AI assistant (Gemini 2.5 Pro) for explanatory purposes. While they aim to be helpful, they may contain inaccuracies. We recommend treating the code itself as the definitive source of logic.
-
-## 📖 Citation
-
-If you use Kronos in your research, we would appreciate a citation to our [paper](https://arxiv.org/abs/2508.02739):
+### 5.1 数据流
 
 ```
-@misc{shi2025kronos,
-      title={Kronos: A Foundation Model for the Language of Financial Markets}, 
-      author={Yu Shi and Zongliang Fu and Shuo Chen and Bohan Zhao and Wei Xu and Changshui Zhang and Jian Li},
-      year={2025},
-      eprint={2508.02739},
-      archivePrefix={arXiv},
-      primaryClass={q-fin.ST},
-      url={https://arxiv.org/abs/2508.02739}, 
-}
+DM API 原始响应
+    │
+    ▼
+┌────────────────────────────┐
+│  _parse_bars()              │  字段名映射 + 时间解析
+│  • trade_date → DatetimeIndex │  + 缺失列填充
+│  • open_price → open        │
+│  • ...                      │
+└──────────┬─────────────────┘
+           ▼
+DataFrame (index=DatetimeIndex, columns=open/high/low/close/volume/amount)
+           │
+    lookback 步          pred_len 步
+    ├──────┼────────┼────────┤
+    │ 输入  │  预测   │        │
+    │ x_df  │ y_true  │        │
+    └──────┴────────┴────────┘
+           │
+           ▼
+┌────────────────────────────┐
+│  KronosPredictor.predict()  │
+│  • z-score 归一化           │
+│  • tokenizer.encode()       │  量化→token
+│  • 自回归推理 (pred_len步)   │  Transformer解码
+│  • tokenizer.decode()       │  token→OHLCV
+│  • 反归一化                  │
+└──────────┬─────────────────┘
+           ▼
+    预测结果 DataFrame
 ```
 
-## 📜 License 
-This project is licensed under the [MIT License](./LICENSE).
+### 5.2 数据格式要求
 
+**输入 DataFrame**（`predict_from_df` 要求）：
+- Index: `DatetimeIndex`（时间升序）
+- Columns: `['open', 'high', 'low', 'close']`（必需）
+- Columns: `['volume', 'amount']`（可选，缺失自动填0）
+- 无 NaN 值
 
+**输入长度限制**：
+- `lookback` ≤ `max_context`（base/small=512）
+- 总数据量需要 ≥ `lookback + pred_len`
 
+### 5.3 预测参数
 
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `T` (temperature) | 1.0 | 采样温度。越低越确定，越高越多样 |
+| `top_p` | 0.9 | Nucleus sampling，保留累积概率 top_p 的 token |
+| `sample_count` | 5 | 采样次数，最终取平均。越高越稳定 |
+| `pred_len` | — | 预测步数，由用户指定 |
 
+---
 
+## 6. API 参考
 
+### 6.1 独立取数函数
 
+#### `fetch_futures_bars(code, start_date, end_date, kline_type=6, fetcher=None)`
+**用途**：拉取国债期货 K 线（T/TF/TL）
+**返回**：`pd.DataFrame` (index=DatetimeIndex)
+```python
+df = fetch_futures_bars("T2609", "2026-01-01", "2026-06-15", kline_type=6)
+```
 
+#### `fetch_equity_bars(code, start_date, end_date, kline_type=6, security_category=3, fetcher=None)`
+**用途**：拉取指数/股票 K 线
+**返回**：`pd.DataFrame`
+```python
+df = fetch_equity_bars("000300.SH", "2026-01-01", "2026-06-15", kline_type=6)
+```
 
+#### `fetch_bond_bars(code, start_date, end_date, kline_type=6, data_source=1, fetcher=None)`
+**用途**：拉取债券 K 线
+**返回**：`pd.DataFrame`
+```python
+df = fetch_bond_bars("2400001.IB", "2026-01-01", "2026-06-15", kline_type=6)
+```
+
+### 6.2 KronosDM 类
+
+#### 初始化
+```python
+from model import KronosTokenizer, Kronos, KronosPredictor
+from kronos_dm_bridge import KronosDM
+
+tokenizer = KronosTokenizer.from_pretrained("models/Kronos-Tokenizer-base")
+model = Kronos.from_pretrained("models/Kronos-base")
+model.eval()
+kp = KronosPredictor(model, tokenizer, device="cpu")
+
+dm = KronosDM(kp)
+```
+
+#### `predict_from_df(df, lookback=200, pred_len=24, T=1.0, top_p=0.9, sample_count=5, verbose=True)`
+从已有 DataFrame 预测。
+```python
+pred = dm.predict_from_df(df, lookback=200, pred_len=5)
+```
+
+#### `predict_futures(code, lookback=200, pred_len=24, kline_type=6, ...)`
+取期货 K 线 → 预测，全自动。
+```python
+pred = dm.predict_futures("T2609", lookback=200, pred_len=5)
+```
+
+#### `predict_index(code="000300.SH", lookback=200, pred_len=5, kline_type=6, ...)`
+取指数 K 线 → 预测。
+```python
+pred = dm.predict_index("000300.SH", lookback=200, pred_len=5)
+```
+
+#### `predict_bond(code, lookback=200, pred_len=24, kline_type=6, ...)`
+取债券 K 线 → 预测。
+```python
+pred = dm.predict_bond("2400001.IB", lookback=200, pred_len=10)
+```
+
+#### `compare(pred_df, actual_df)`
+比较预测值与实际值。
+```python
+comparison = dm.compare(pred_df, actual_df)
+print(comparison[["pred_close", "actual_close", "error_pct"]])
+```
+
+#### `print_summary(pred_df, label="预测结果")`
+打印预测摘要。
+
+---
+
+## 7. 实战案例
+
+### 7.1 命令行：预测 T 主力期货
+
+```bash
+cd ~/quant/Kronos
+source venv/bin/activate
+
+# 预测 T主力 日线，未来5个交易日
+python3 examples/kronos_dm_predict.py \
+    -t futures -s T \
+    -b 200 -p 5 \
+    --samples 5
+```
+
+输出示例：
+```
+🤖 加载 Kronos-base...
+   ✅ Kronos-base: 102,310,592 params | device=cpu
+
+📈 日线 预测
+🎯 期货: T (T2609)
+🔍 取数: T2609 (daily) | 2025-11-18 ~ 2026-06-15
+      实际数据: 119 行
+
+📊 输入: 100 步 → 预测: 5 步
+      时间范围: 2026-01-04 ~ 2026-06-11
+
+📋 预测结果
+    最新预测收盘: 109.1562
+    趋势: 📈 上涨
+```
+
+### 7.2 Python API：全流程
+
+```python
+import sys
+sys.path.insert(0, '.')
+
+from model import KronosTokenizer, Kronos, KronosPredictor
+from kronos_dm_bridge import (
+    KronosDM,
+    _get_nearby_futures_code,
+    fetch_futures_bars,
+)
+
+# 1. 加载模型
+tok = KronosTokenizer.from_pretrained("models/Kronos-Tokenizer-base")
+model = Kronos.from_pretrained("models/Kronos-base")
+model.eval()
+kp = KronosPredictor(model, tok, device="cpu")
+print(f"模型加载完成: {sum(p.numel() for p in model.parameters()):,} params")
+
+# 2. 创建 DM 桥梁
+dm = KronosDM(kp)
+
+# 3. 获取数据 + 预测（一站式）
+code = _get_nearby_futures_code("T")
+pred = dm.predict_futures(code, lookback=200, pred_len=5, verbose=True)
+
+# 4. 查看结果
+print(pred[["open", "high", "low", "close"]].round(4))
+
+# 5. 获取实际数据做对比
+df = fetch_futures_bars(code, "2026-01-01", "2026-06-15")
+print(dm.compare(pred, df).round(4))
+```
+
+### 7.3 5分钟K线预测
+
+```python
+# 取5分钟K线，前400根输入，预测后24根（=2小时）
+pred = dm.predict_futures(
+    code="T2609",
+    lookback=400,
+    pred_len=24,
+    kline_type=2,     # 5分钟K线
+    sample_count=5,
+)
+```
+
+### 7.4 批量预测多个品种
+
+```python
+for symbol in ["T", "TF", "TL"]:
+    code = _get_nearby_futures_code(symbol)
+    pred = dm.predict_futures(code, lookback=100, pred_len=5)
+    dm.print_summary(pred, label=f"{symbol} ({code})")
+```
+
+---
+
+## 8. 坑点与注意事项
+
+### ⚠️ 8.1 上下文长度限制
+
+**Kronos-base 和 Kronos-small 的 `max_context=512`**。输入的历史K线长度（`lookback`）不能超过此值。 predictor 会自动截断，但截断后的历史可能丢失重要信息。
+
+**对策**：
+- 日线预测：`lookback` 设为 200-500（≈1-2年日线）
+- 分钟线预测：`lookback` 设为 200-400（剩余空间留给 `pred_len`）
+- 总长度 = `lookback` + `pred_len`，但模型只看最后的 `max_context` 个 token
+
+### ⚠️ 8.2 DM API 取数限制
+
+| 限制 | 详情 |
+|------|------|
+| 跨日范围 | 日线 ≤ 1年，分钟线 ≤ 1天~2月 |
+| 并发 | 无严格限制，但建议每次调用间隔 0.3s |
+| 字段名 | 期货用 `trade_date`，权益用 `data_date`，**不是** `timestamp` |
+| 期货代码 | **不带** `.IB`/`.SH` 后缀（区别于债券/权益） |
+| 债券代码 | **必须带** `.IB` 后缀 |
+
+### ⚠️ 8.3 HuggingFace 国内下载
+
+```bash
+# 必须使用镜像
+export HF_ENDPOINT=https://hf-mirror.com
+# 然后运行任何 huggingface_hub 操作
+```
+
+### ⚠️ 8.4 模型输入的时间维度
+
+Kronos 的 `calc_time_stamps()` 会从时间戳提取 `minute/hour/weekday/day/month` 作为特征。传入的 `x_timestamp` / `y_timestamp` 必须是 **`pd.Series`**（含 datetime 值），**不能是** `DatetimeIndex` 或 `Index`。
+
+`kronos_dm_bridge.py` 已自动处理此转换，直接传 DataFrame 即可。
+
+### ⚠️ 8.5 资金面/货币市场数据不适用
+
+Kronos 训练数据是 **OHLCV K 线**（全球交易所），**不是**货币市场利率或债券收益率曲线。以下数据不可用：
+- ❌ DR007 / R007 / Shibor
+- ❌ 收益率曲线（国债/国开）
+- ❌ 机构买卖行为
+
+以下可用：
+- ✅ **国债期货** K 线 (T/TF/TL) — 最直接的应用
+- ✅ **股票指数** K 线（沪深300、中证500、上证50等）
+- ✅ 个股 K 线
+- ✅ 债券 K 线（需有足够流动性）
+
+---
+
+## 9. 错误排查
+
+### 9.1 DM API 连接问题
+
+| 错误 | 原因 | 解决 |
+|------|------|------|
+| `app_key is required` | 未加载 .env | 检查 `~/quant/backtraderUS/.env` 是否存在 |
+| `CRLF detected` | .env 有 Windows 换行 | `sed -i 's/\r$//' .env` |
+| `Network is unreachable` | 网络不通 | 检查 VPN/代理 |
+| `quota_exhausted` / 429 | API 额度用完 | 减少调用量 |
+
+### 9.2 模型加载问题
+
+| 错误 | 原因 | 解决 |
+|------|------|------|
+| `LocalEntryNotFoundError` | 模型未下载 | 用 `HF_ENDPOINT=https://hf-mirror.com` 下载 |
+| `CUDA out of memory` | GPU 显存不足 | 改用 `device="cpu"` |
+| `AttributeError: 'int' object has no attribute 'date'` | 时间戳未正确解析 | 确认数据包含 `trade_date` 字段 |
+
+### 9.3 预测问题
+
+| 现象 | 原因 | 解决 |
+|------|------|------|
+| 预测值全部相同 | `T`（temperature）过低或 `sample_count`=1 | 设 `T=1.0`, `sample_count≥5` |
+| 预测值严重偏离 | 数据包含 NaN | 检查输入数据是否有空值 |
+| 推理极慢 | CPU 运行大模型 | 每分钟线推理约 0.5s/token，日线约 0.15s/token |
+| 返回空 DataFrame | 数据不足 | 需要 ≥ `lookback + pred_len` 行 |
+
+### 9.4 性能基准
+
+| 场景 | 推理速度 (CPU) | 推理速度 (估计 CUDA) |
+|------|---------------|-------------------|
+| Kronos-base, lookback=200, pred_len=5 (日线) | ~0.8s | ~0.05s |
+| Kronos-base, lookback=400, pred_len=24 (5分钟) | ~4.5s | ~0.3s |
+| Kronos-small, lookback=200, pred_len=5 | ~0.3s | ~0.02s |
+
+---
+
+## 附录
+
+### A. DM API 关键端点速查
+
+| 路径 | 用途 | 日期参数名 |
+|------|------|-----------|
+| `/futures/market-data/bars` | 期货K线 | `start_datetime` / `end_datetime` |
+| `/equity/market-data/bars` | 权益K线 | `start_datetime` / `end_datetime` |
+| `/bond/market-data/bars` | 债券K线 | `start_datetime` / `end_datetime` |
+| `/bond/market-data/rolling-bonds` | 活跃券 | `start_date` / `end_date` |
+
+### B. 文件速查
+
+| 文件 | 关键内容 |
+|------|---------|
+| `~/quant/Kronos/kronos_dm_bridge.py` | 核心桥梁，~440行 |
+| `~/quant/Kronos/examples/kronos_dm_predict.py` | CLI入口，~160行 |
+| `~/quant/Kronos/model/kronos.py` | Kronos 模型定义，~662行 |
+| `~/quant/backtraderUS/.env` | DM API 凭证 |
+| `~/quant/macro_monitor/dm_fetcher.py` | DM API 封装取数层 |
+
+### C. 快速启动
+
+```bash
+# 1. 激活环境
+cd ~/quant/Kronos && source venv/bin/activate
+
+# 2. 启动预测（T主力，日线，未来5天）
+python3 examples/kronos_dm_predict.py -t futures -s T -b 200 -p 5
+
+# 3. Python交互式
+python3 -c "
+from model import *
+from kronos_dm_bridge import *
+kp = KronosPredictor(
+    Kronos.from_pretrained('models/Kronos-base').eval(),
+    KronosTokenizer.from_pretrained('models/Kronos-Tokenizer-base')
+)
+dm = KronosDM(kp)
+pred = dm.predict_futures(_get_nearby_futures_code('T'), 200, 5)
+print(pred[['close']])
+"
+```

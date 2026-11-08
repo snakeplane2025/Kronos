@@ -74,3 +74,9 @@ venv.bak/
 temp/
 tmp/
 .python-version
+
+# local artifacts (llzjj)
+finetuned_models/
+models/
+finetune_data/
+reports/

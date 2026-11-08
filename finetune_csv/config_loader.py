@@ -149,6 +149,8 @@ class CustomFinetuneConfig:
         self.adam_beta2 = training_config.get('adam_beta2', 0.95)
         self.adam_weight_decay = training_config.get('adam_weight_decay', 0.1)
         self.accumulation_steps = training_config.get('accumulation_steps', 1)
+        self.early_stop_patience = training_config.get('early_stop_patience', 0)
+        self.early_stop_delta = training_config.get('early_stop_delta', 0.0)
         
         model_paths = self.loader.get_model_paths()
         self.exp_name = model_paths.get('exp_name', 'default_experiment')

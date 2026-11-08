@@ -1,0 +1,43 @@
+data:
+  clip: 5.0
+  data_path: /home/llzjj/quant/Kronos/finetune_data/TF/TF_all.csv
+  lookback_window: 128
+  max_context: 512
+  predict_window: 10
+  test_ratio: 0.1
+  train_ratio: 0.8
+  val_ratio: 0.1
+device:
+  device_id: 0
+  use_cuda: false
+experiment:
+  description: Kronos fine-tune on TF (5年期国债期货) daily futures data
+  name: kronos_finetune_TF
+  skip_existing: false
+  train_basemodel: true
+  train_tokenizer: true
+  use_comet: false
+model_paths:
+  base_path: /home/llzjj/quant/Kronos/finetuned_models
+  base_save_path: ''
+  basemodel_save_name: basemodel
+  exp_name: futures_TF
+  finetuned_tokenizer: ''
+  pretrained_predictor: /home/llzjj/quant/Kronos/models/Kronos-base
+  pretrained_tokenizer: /home/llzjj/quant/Kronos/models/Kronos-Tokenizer-base
+  tokenizer_save_name: tokenizer
+training:
+  accumulation_steps: 1
+  adam_beta1: 0.9
+  adam_beta2: 0.95
+  adam_weight_decay: 0.1
+  basemodel_epochs: 20
+  batch_size: 16
+  early_stop_delta: 0.001
+  early_stop_patience: 5
+  log_interval: 20
+  num_workers: 2
+  predictor_learning_rate: 1.0e-05
+  seed: 42
+  tokenizer_epochs: 20
+  tokenizer_learning_rate: 0.0002

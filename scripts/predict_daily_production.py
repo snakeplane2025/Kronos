@@ -252,6 +252,41 @@ def main():
                   f"({result['pct_change']:+.2f}%) {result['trend']}")
         results.append(result)
 
+    # CSV追加输出(四品种日更, 供signal_snapshot.py读取) — 2026-09-20新增
+    if not args.no_save:
+        try:
+            import pandas as pd
+            csv_path = os.path.join(REPORT_DIR, "kronos_predictions_backfill.csv")
+            rows = []
+            for r in results:
+                if "error" in r:
+                    continue
+                pred_date = r["pred_dates"][-1] if r.get("pred_dates") else datetime.now().strftime("%Y-%m-%d")
+                rows.append({
+                    "date": pred_date,
+                    "symbol": r["symbol"],
+                    "full_name": r["name"],
+                    "model_type": r["model_type"],
+                    "model_tag": "FT" if r["model_type"] == "fine-tuned" else "ORIG",
+                    "last_close": r["last_close"],
+                    "pred_close": r["pred_last"],
+                    "pct_change": round(r["pct_change"], 4),
+                    "trend": r["trend"],
+                    "data_bars": r["data_bars"],
+                })
+            if rows:
+                new_df = pd.DataFrame(rows)
+                if os.path.exists(csv_path):
+                    old_df = pd.read_csv(csv_path)
+                    merged = pd.concat([old_df, new_df], ignore_index=True)
+                    merged = merged.drop_duplicates(subset=["date", "symbol"], keep="last")
+                else:
+                    merged = new_df
+                merged.to_csv(csv_path, index=False, encoding="utf-8-sig")
+                print(f"\n📄 CSV已更新: {csv_path} (+{len(rows)}行, 总{len(merged)}行)")
+        except Exception as e:
+            print(f"\n⚠️ CSV输出失败: {type(e).__name__}: {e}")
+
     # 报告
     report = generate_report(results, run_time)
     print("\n" + "=" * 60)

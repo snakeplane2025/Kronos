@@ -265,6 +265,9 @@ def train_model(model, tokenizer, device, config, save_dir, logger):
 
     best_val_loss = float('inf')
     batch_idx_global = 0
+    no_improve_epochs = 0
+    early_stop_patience = getattr(config, 'early_stop_patience', 0)
+    early_stop_delta = getattr(config, 'early_stop_delta', 0.0)
     
     for epoch in range(config.basemodel_epochs):
         epoch_start_time = time.time()
@@ -353,6 +356,7 @@ def train_model(model, tokenizer, device, config, save_dir, logger):
         
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
+            no_improve_epochs = 0
             if rank == 0:
                 model_save_path = os.path.join(save_dir, "best_model")
                 os.makedirs(model_save_path, exist_ok=True)
@@ -360,6 +364,21 @@ def train_model(model, tokenizer, device, config, save_dir, logger):
                 save_msg = f"Best model saved to: {model_save_path} (validation loss: {best_val_loss:.4f})"
                 logger.info(save_msg)
                 print(save_msg)
+        else:
+            if avg_val_loss > best_val_loss - early_stop_delta:
+                no_improve_epochs += 1
+                es_msg = f"Validation loss did not improve for {no_improve_epochs} epoch(s) (best: {best_val_loss:.4f}, current: {avg_val_loss:.4f})"
+                logger.info(es_msg)
+                if rank == 0:
+                    print(es_msg)
+                if early_stop_patience > 0 and no_improve_epochs >= early_stop_patience:
+                    stop_msg = f"Early stopping triggered after {epoch+1} epochs (no improvement for {early_stop_patience} consecutive epochs)"
+                    logger.info(stop_msg)
+                    if rank == 0:
+                        print(stop_msg)
+                    break
+            else:
+                no_improve_epochs = 0
     
     return best_val_loss
 
